@@ -1,12 +1,13 @@
 import re
+
 import pymupdf
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db import get_db
+from app.models import Chunk, Document
 from app.schemas import UploadResponse
 from app.storage import upload_pdf
-from app.models import Chunk, Document
-from app.db import get_db
 
 router = APIRouter()
 YEAR_RE=re.compile(r"(20\d{2})")
@@ -30,7 +31,7 @@ async def upload(
     year=int(match.group(1))
     content=await file.read()
     s3_key=upload_pdf(user_id,file.filename,content)
-    doc=Document(user_id=user_id, filename=file.filename, year=year)
+    doc=Document(user_id=user_id, filename=file.filename, year=year,s3_key=s3_key)
     db.add(doc)
     await db.flush()
     

@@ -26,6 +26,7 @@ class Document(Base):
         back_populates="document",
         cascade="all, delete-orphan"
     )
+    s3_key: Mapped[str]= mapped_column(String(512))
 
 class Chunk(Base):
     __tablename__ = "chunks"
