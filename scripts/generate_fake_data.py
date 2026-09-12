@@ -25,7 +25,7 @@ def make_pdf(user: str, year: int) -> None:
         f"Effective year: {year}",
         "",
         f"Overdraft fee: {FEES_BY_YEAR[year]} of the overdrawn amount",
-        f"Monthly maintence fee: ${random.randint(5,15)}.00",
+        f"Monthly maintenance fee: ${random.randint(5,15)}.00",
         f"ATM withdrawal limit: ${random.choice([300,500,1000])} per day",
         f"Wire transfer fee: ${random.randint(10,30)}.00 per transfer.",
         "Contact support for questions about your account"
