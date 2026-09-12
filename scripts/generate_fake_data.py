@@ -5,7 +5,7 @@ from pathlib import Path
 from reportlab.lib.pagesizes import LETTER
 from reportlab.pdfgen import canvas
 
-OUTPUT_DIR = Path(__file__).parent / "data" / "fake_pdfs"
+OUTPUT_DIR = Path(__file__).parent.parent / "data" / "fake_pdfs"
 FEES_BY_YEAR = {2025: "1%", 2026: "2%"}
 USERS = [f"user{i}" for i in range(1,11)]
 random.seed(42)
