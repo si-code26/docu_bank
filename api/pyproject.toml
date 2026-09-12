@@ -5,8 +5,14 @@ description="DocuBank API service"
 requires-python=">=3.12"
 
 dependencies=[
+    "asyncpg>=0.29",
+    "boto3>=1.34",
     "fastapi>0.115",
-    "uvicorn[standard]>=0.30"
+    "pgvector>=0.3",
+    "pymupdf>=1.24",
+    "python-multipart>=0.0.9",
+    "sqlalchemy[asyncio]>=2.0",
+    "uvicorn[standard]>=0.30",
 ]
 
 [dependency-groups]
@@ -15,8 +21,14 @@ dev=[
     "ruff>0.6"
 ]
 
+[tool.ruff]
+line-length=100
+
 [tool.ruff.lint]
 select = ["E","F","I","UP","B"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls=["fastapi.Depends"]
 
 [tool.pytest.ini_options]
 testpaths=["tests"]
