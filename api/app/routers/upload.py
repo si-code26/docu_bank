@@ -4,6 +4,7 @@ import pymupdf
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.chunking import chunk_text
 from app.db import get_db
 from app.models import Chunk, Document
 from app.schemas import UploadResponse
@@ -19,7 +20,7 @@ async def upload(
     db: AsyncSession=Depends(get_db)
 ) -> UploadResponse:
     if not file.filename or not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status=400, detail="only PDF files accepted")
+        raise HTTPException(status_code=400, detail="only PDF files accepted")
 
     match=YEAR_RE.search(file.filename)
     if not match:
@@ -38,19 +39,20 @@ async def upload(
     pdf = pymupdf.open(stream=content,filetype="pdf")
     chunk_count=0
     for page_number, page in enumerate(pdf, start=1):
-        text = page.get_text().strip()
-        if not text:
+        page_text = page.get_text().strip()
+        if not page_text:
             continue
-        db.add(
-            Chunk(
-                document_id=doc.id,
-                user_id=user_id,
-                year=year,
-                page=page_number,
-                text=text
+        for piece in chunk_text(page_text):
+            db.add(
+                Chunk(
+                    document_id=doc.id,
+                    user_id=user_id,
+                    year=year,
+                    page=page_number,
+                    text=piece
+                )
             )
-        )
-        chunk_count += 1
+            chunk_count += 1
     pdf.close()
 
     await db.commit()
