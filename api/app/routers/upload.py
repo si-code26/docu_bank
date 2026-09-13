@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.chunking import chunk_text
 from app.db import get_db
+from app.embeddings import embed_texts
 from app.models import Chunk, Document
 from app.schemas import UploadResponse
 from app.storage import upload_pdf
@@ -42,14 +43,19 @@ async def upload(
         page_text = page.get_text().strip()
         if not page_text:
             continue
-        for piece in chunk_text(page_text):
+        pieces=chunk_text(page_text)
+        if not pieces:
+            continue
+        vectors=await embed_texts(pieces)
+        for piece,vector in zip(pieces,vectors,strict=True):
             db.add(
                 Chunk(
                     document_id=doc.id,
                     user_id=user_id,
                     year=year,
                     page=page_number,
-                    text=piece
+                    text=piece,
+                    embedding=vector
                 )
             )
             chunk_count += 1
