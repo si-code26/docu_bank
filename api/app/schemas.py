@@ -25,7 +25,7 @@ class SourceChunk(BaseModel):
 
 class AskResponse(BaseModel):
     answer: str
-    source: list[SourceChunk]
+    sources: list[SourceChunk]
 
 class DocumentOut(BaseModel):
     id: uuid.UUID

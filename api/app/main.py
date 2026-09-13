@@ -6,10 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import engine, get_db
 from app.models import Base
+from app.routers.ask import router as ask_router
 from app.routers.upload import router as upload_router
 
 app = FastAPI(title="DocuBank API")
 app.include_router(upload_router)
+app.include_router(ask_router)
 
 @app.on_event("startup")
 async def create_tables() -> None:
