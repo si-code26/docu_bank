@@ -8,7 +8,6 @@ from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import TSVECTOR, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-
 class Base(DeclarativeBase):
     """All models inherit from this"""
 
@@ -50,4 +49,11 @@ class Chunk(Base):
     document: Mapped[Document] = relationship(back_populates="chunks")
     __table_args__ = (
         Index("ix_chunks_user_year", "user_id", "year"),
+        Index(
+            "ix_chunks_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_with={"m":16,"ef_construction":64},
+            postgresql_ops={"embedding":"vector_cosine_ops"}
+        )
     )
