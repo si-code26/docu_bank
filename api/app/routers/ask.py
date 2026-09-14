@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.db import get_db
 from app.embeddings import _client
 from app.models import Chunk
@@ -10,7 +11,6 @@ from app.schemas import AskRequest, AskResponse, SourceChunk
 
 router = APIRouter()
 
-ANSWER_MODEL="gpt-4o-mini"
 SYSTEM_PROMPT="""You answer questions about banking policy documents.
 Use ONLY the provided context. If the answeris not in the context,
 say you don't know. Quote numeric values excatly as written."""
@@ -47,7 +47,7 @@ async def ask(
         f"[page {c.page}, year {c.year}\n{c.text}]" for c, _ in hits
     )
     completion= await _client.chat.completions.create(
-        model=ANSWER_MODEL,
+        model=settings.answer_model,
         messages=[
             {"role":"system", "content": SYSTEM_PROMPT},
             {"role":"user","content":f"Context:\n{context}\n\nQuestion:{req.question}"}
