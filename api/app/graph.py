@@ -1,11 +1,17 @@
+import re
+
 from typing import TypedDict
 
 from langgraph.graph import END, StateGraph
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func,select
 
 from app.config import settings
 from app.embeddings import _client
 from app.retrieval import retrieve_chunks
+from app.models import Chunk
+
+YEAR_RE=re.compile(r"\b(20\d{2})\b")
 
 
 class AgentState(TypedDict):
@@ -16,6 +22,16 @@ class AgentState(TypedDict):
     answer: str
     db: AsyncSession
     route: str
+
+async def year_resolve_node(state: AgentState) -> dict:
+    m=YEAR_RE.search(state["question"])
+    if m:
+        return {"year": int(m.group(1))}
+    result=await state["db"].execute(
+        select(func.max(Chunk.year)).where(Chunk.user_id==state["user_id"])
+    )
+    latest=result.scalar()
+    return {"year":latest or 2026}
 
 async def retrieve_node(state:AgentState) -> dict:
     hits=await retrieve_chunks(
@@ -80,19 +96,20 @@ def build_graph():
     g.add_node("router", router_node)
     g.add_node("direct", direct_node)
     g.add_node("blocked", blocked_node)
-
+    g.add_node("year_resolve", year_resolve_node)
 
     g.add_node("retrieve",retrieve_node)
     g.add_node("answer", answer_node)
     
     g.set_entry_point("router")
     g.add_conditional_edges("router", lambda s: s["route"], {
-        "retrieve": "retrieve",
+        "retrieve": "year_resolve",
         "direct": "direct",
         "blocked": "blocked"
     })
+    g.add_edge("year_resolve", "retrieve")
     g.add_edge("retrieve","answer")
-
+    
     g.add_edge("answer", END)
     g.add_edge("direct", END)
     g.add_edge("blocked", END)
