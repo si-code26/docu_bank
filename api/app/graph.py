@@ -23,6 +23,58 @@ class AgentState(TypedDict):
     db: AsyncSession
     route: str
     hits: list
+    grade: str
+    retries: int
+
+
+async def evaluate_node(state: AgentState) -> dict:
+    resp=await _client.chat.completions.create(
+        model=settings.answer_model,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Grade this answer against the context. Reply with ONLY one word: "
+                    "PASS if the answer is fully supported by the context and correct, "
+                    "FAIL if it contradicts the context, invents facts, or is unsupported."
+                )
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Context: \n{state['context']}\n\n"
+                    f"Question: {state['question']}\n\n"
+                    f"Answer: {state['answer']}"
+                )
+            }
+        ],
+        temperature=0
+    )
+    grade=(resp.choices[0].message.content or "").strip().upper()
+    return {"grade": grade, "retries": state.get("retries", 0)}
+
+
+def needs_retry(state: AgentState) -> str:
+    if state["grade"] == "FAIL" and state.get("retries",0) < 1:
+        return "retry"
+    return "done"
+
+async def retry_answer_node(state: AgentState) -> dict:
+    resp=await _client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role":"system", 
+                "content":"Answer from the context only. Be precise. Quote numbers exactly. "
+            },
+            {
+                "role": "user", 
+                "content": f"Context: \n{state['context']}\n\nQuestion:{state['question']}"}
+        ],
+        temperature=0
+    )
+    return {"answer":resp.choices[0].message.content or "",
+    "retries": state.get("retries", 0) + 1}
 
 async def extract_numbers_node(state: AgentState) -> dict:
     resp=await _client.chat.completions.create(
@@ -171,6 +223,8 @@ async def blocked_node(state:AgentState) -> dict:
 def build_graph():
     g=StateGraph(AgentState)
     
+    g.add_node("evaluate", evaluate_node)
+    g.add_node("retry_answer", retry_answer_node)
     g.add_node("hybrid", hybrid_node)
     g.add_node("rerank", rerank_node)
     g.add_node("build_context", build_context_node)
@@ -190,12 +244,17 @@ def build_graph():
         "rerank": "rerank",
         "skip": "build_context"
     })
+    g.add_conditional_edges("evaluate", needs_retry, {
+        "retry": "retry_answer",
+        "done": END
+    })
 
     g.add_edge("year_resolve", "hybrid")
     g.add_edge("rerank", "build_context")
     g.add_edge("build_context","answer")
+    g.add_edge("answer", "evaluate")
+    g.add_edge("retry_answer", "evaluate")
     
-    g.add_edge("answer", END)
     g.add_edge("direct", END)
     g.add_edge("blocked", END)
     return g.compile()
