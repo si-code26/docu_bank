@@ -1,4 +1,4 @@
-from sqlalchemy import select, func, text as sql_text
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.embeddings import embed_texts
