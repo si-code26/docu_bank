@@ -4,6 +4,7 @@ import pymupdf
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.storage import publish_ingest_job
 from app.chunking import chunk_text
 from app.db import get_db
 from app.embeddings import embed_texts
@@ -61,12 +62,13 @@ async def upload(
             chunk_count += 1
     pdf.close()
 
+    publish_ingest_job(str(doc.id))
     await db.commit()
 
     return UploadResponse(
         document_id=doc.id,
         filename=file.filename,
         year=year,
-        chunk_count=chunk_count
+        chunk_count=0
     )
     
