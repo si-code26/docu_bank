@@ -4,13 +4,12 @@ import pymupdf
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.storage import publish_ingest_job
 from app.chunking import chunk_text
 from app.db import get_db
 from app.embeddings import embed_texts
 from app.models import Chunk, Document
 from app.schemas import UploadResponse
-from app.storage import upload_pdf
+from app.storage import publish_ingest_job, upload_pdf
 
 router = APIRouter()
 YEAR_RE=re.compile(r"(20\d{2})")
