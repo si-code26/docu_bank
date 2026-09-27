@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sse_starlette.sse import EventSourceResponse
 
 from app.config import settings
 from app.db import get_db
 from app.embeddings import _client
 from app.models import Chunk
-from app.retrieval import retrieve_chunks
+from app.retrieval import hybrid_retrieve, retrieve_chunks
 from app.schemas import AskRequest, AskResponse, SourceChunk
 
 router = APIRouter()
@@ -14,6 +15,38 @@ router = APIRouter()
 SYSTEM_PROMPT="""You answer questions about banking policy documents.
 Use ONLY the provided context. If the answeris not in the context,
 say you don't know. Quote numeric values excatly as written."""
+
+async def _latest_year(
+    db: AsyncSession,
+    user_id: str
+) -> int:
+    result=await db.execute(
+        select(func.max(Chunk.year)).where(Chunk.user_id==user_id)
+    )
+    return result.scalar() or 2026
+
+@router.post("/ask/stream")
+async def ask_stream(req: AskRequest, db: AsyncSession=Depends(get_db)):
+    year=req.year or await _latest_year(db,req.user_id)
+    hits=await hybrid_retrieve(db, req.question, req.user_id, year)
+    context="\n---\n".join(f"[page {c.page}] {c.text}" for c,_ in hits) or "no results"
+
+    async def event_generator():
+        stream=await _client.chat.completions.create(
+            model=settings.answer_model,
+            messages=[
+                {"role":"system", "content":"Answer from the context only. Quote numbers exactly."},
+                {"role":"user", "content": f"Context:\n{context}\n\nQuestion: {req.question}"}
+            ],
+            stream=True
+        )
+        async for chunk in stream:
+            delta=chunk.choices[0].delta.content
+            if delta:
+                yield {"event": "token", "data": delta}
+        yield {"event": "done", "data": ""}
+
+    return EventSourceResponse(event_generator())
 
 @router.post("/ask", response_model=AskResponse)
 async def ask(
