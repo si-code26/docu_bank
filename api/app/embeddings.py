@@ -4,6 +4,7 @@ import pybreaker
 from openai import APIStatusError, AsyncOpenAI
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from app.cache import get_cached, set_cached
 from app.config import settings
 
 _client=AsyncOpenAI(api_key=settings.openai_api_key)
@@ -36,6 +37,12 @@ async def _embed_texts_call(texts: list[str]) -> list[list[float]]:
 async def embed_texts(texts: list[str]) -> list[list[float]]:
     global _failures, _opened_at
 
+    if len(texts) ==1:
+        cached=await get_cached("embed",texts[0])
+        if cached:
+            return [cached["vector"]]
+
+
     if _opened_at is not None:
         if time.time() - _opened_at < RESET_TIMEOUT:
             raise RuntimeError("circuit open: embedding service unavailable")
@@ -44,9 +51,13 @@ async def embed_texts(texts: list[str]) -> list[list[float]]:
     try:
         result=await _embed_texts_call(texts)
         _failures=0
-        return result
     except Exception:
         _failures +=1
         if _failures>=FAIL_MAX:
             _opened_at=time.time()
         raise
+
+    if len(texts) ==1:
+        await set_cached("embed",texts[0],value={"vector":result[0]})
+
+    return result
