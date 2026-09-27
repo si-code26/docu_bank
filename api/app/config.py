@@ -9,5 +9,6 @@ class Settings(BaseSettings):
     s3_bucket:str="docubank-uploads"
     embed_model:str="text-embedding-3-small"
     answer_model:str="gpt-4o-mini"
+    redis_url: str="redis://localhost:6379/0"
 
 settings=Settings()

@@ -7,6 +7,7 @@ from app.config import settings
 from app.db import get_db
 from app.embeddings import _client
 from app.models import Chunk
+from app.rate_limit import check_rate_limit
 from app.retrieval import hybrid_retrieve, retrieve_chunks
 from app.schemas import AskRequest, AskResponse, SourceChunk
 
@@ -53,6 +54,9 @@ async def ask(
     req: AskRequest,
     db: AsyncSession=Depends(get_db)
 ) -> AskResponse:
+    if not await check_rate_limit(req.user_id):
+        raise HTTPException(status_code=429,detail="rate limit exceeded, try again shortly")
+
     year=req.year
     if year is None:
         result=await db.execute(
