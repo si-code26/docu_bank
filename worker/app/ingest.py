@@ -1,21 +1,23 @@
+import asyncio
 import json
 
 import boto3
 import pymupdf
-from app.chunking import chunk_text
 from sqlalchemy import select
 
+from app.chunking import chunk_text
+from app.config import settings
 from app.db import SessionFactory
 from app.embeddings import embed_texts
 from app.models import Chunk, Document
 from app.storage import download_pdf
 
-QUEUE_URL="http://localhost:4566/000000000000/docubank-ingest"
+QUEUE_URL=settings.ingest_queue_url
 
 def get_sqs_client():
     return boto3.client(
         "sqs", 
-        endpoint_url="http://localhost:4566",
+        endpoint_url=settings.sqs_endpoint,
         aws_access_key_id="test", 
         aws_secret_access_key="test",
         region_name="us-east-1"
@@ -64,3 +66,7 @@ async def poll_loop():
             body=json.loads(msg["Body"])
             await process_message(body)
             sqs.delete_message(QueueUrl=QUEUE_URL, ReceiptHandle=msg["ReceiptHandle"])
+
+
+if __name__ == "__main__":
+    asyncio.run(poll_loop())
