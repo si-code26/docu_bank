@@ -62,3 +62,32 @@ resource "aws_ecs_task_definition" "api" {
     }
   ])
 }
+
+resource "aws_ecs_task_definition" "worker" {
+  family                   = "docubank-worker"
+  requires_compatibilities = ["FARGATE"]
+  network_mode              = "awsvpc"
+  cpu                        = "256"
+  memory                     = "512"
+  execution_role_arn         = aws_iam_role.ecs_execution.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "worker"
+      image     = "833068513702.dkr.ecr.us-east-1.amazonaws.com/docubank-worker:latest"
+      essential = true
+      environment = [
+        { name = "DATABASE_URL", value = "postgresql+asyncpg://docubank:${var.db_password}@${aws_db_instance.docubank.address}:5432/docubank" },
+        { name = "OPENAI_API_KEY", value = var.openai_api_key },
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.worker.name
+          "awslogs-region"        = "us-east-1"
+          "awslogs-stream-prefix" = "worker"
+        }
+      }
+    }
+  ])
+}
