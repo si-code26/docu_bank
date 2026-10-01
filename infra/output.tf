@@ -5,3 +5,7 @@ output "db_endpoint" {
 output "vpc_id" {
   value = aws_vpc.docubank.id
 }
+
+output "alb_dns" {
+  value = aws_lb.docubank.dns_name
+}
