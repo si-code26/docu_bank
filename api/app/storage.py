@@ -23,12 +23,13 @@ def upload_pdf(user_id: str, filename: str, content: bytes) -> str:
 def publish_ingest_job(document_id: str) -> None:
     sqs=boto3.client(
         "sqs",
-        endpoint_url=settings.s3_endpoint,
+        endpoint_url=settings.sqs_endpoint,
         aws_access_key_id="test",
         aws_secret_access_key="test",
         region_name="us-east-1"
     )
     sqs.send_message(
-        QueueUrl="http://localhost:4566/000000000000/docubank-ingest",
+        QueueUrl=settings.ingest_queue_url,
         MessageBody=json.dumps({"document_id":document_id})
     )
+
