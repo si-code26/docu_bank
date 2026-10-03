@@ -15,13 +15,12 @@ from app.storage import download_pdf
 QUEUE_URL=settings.ingest_queue_url
 
 def get_sqs_client():
-    return boto3.client(
-        "sqs", 
-        endpoint_url=settings.sqs_endpoint,
-        aws_access_key_id="test", 
-        aws_secret_access_key="test",
-        region_name="us-east-1"
-    )
+    kwargs = {"region_name": "us-east-1"}
+    if settings.sqs_endpoint:
+        kwargs["endpoint_url"] = settings.sqs_endpoint
+        kwargs["aws_access_key_id"] = "test"
+        kwargs["aws_secret_access_key"] = "test"
+    return boto3.client("sqs", **kwargs)
 
 async def process_message(body:dict) -> None:
     doc_id=body["document_id"]

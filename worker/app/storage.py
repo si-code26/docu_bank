@@ -5,13 +5,12 @@ from app.config import settings
 
 
 def get_s3_client():
-    return boto3.client(
-        "s3", 
-        endpoint_url=settings.s3_endpoint,
-        aws_access_key_id="test",
-        aws_secret_access_key="test",
-        region_name="us-east-1"
-    )
+    kwargs = {"region_name": "us-east-1"}
+    if settings.s3_endpoint:
+        kwargs["endpoint_url"] = settings.s3_endpoint
+        kwargs["aws_access_key_id"] = "test"
+        kwargs["aws_secret_access_key"] = "test"
+    return boto3.client("s3", **kwargs)
 
 def download_pdf(s3_key:str) -> bytes:
     s3=get_s3_client()

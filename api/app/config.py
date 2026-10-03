@@ -11,6 +11,6 @@ class Settings(BaseSettings):
     answer_model:str="gpt-4o-mini"
     redis_url: str="redis://localhost:6379/0"
     sqs_endpoint:str|None=None
-    ingest_queue_url:str="http://localhost:4566/000000000000/docubank-ingest"
+    ingest_queue_url:str
 
 settings=Settings()

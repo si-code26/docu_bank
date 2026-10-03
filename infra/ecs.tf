@@ -40,6 +40,7 @@ resource "aws_ecs_task_definition" "api" {
   cpu                        = "256"
   memory                     = "512"
   execution_role_arn         = aws_iam_role.ecs_execution.arn
+  task_role_arn              = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([
     {
@@ -50,6 +51,8 @@ resource "aws_ecs_task_definition" "api" {
       environment = [
         { name = "DATABASE_URL", value = "postgresql+asyncpg://docubank:${var.db_password}@${aws_db_instance.docubank.address}:5432/docubank" },
         { name = "OPENAI_API_KEY", value = var.openai_api_key },
+        { name = "S3_BUCKET", value = aws_s3_bucket.uploads.bucket },
+        { name = "INGEST_QUEUE_URL", value = aws_sqs_queue.ingest.url },
       ]
       logConfiguration = {
         logDriver = "awslogs"
@@ -70,6 +73,7 @@ resource "aws_ecs_task_definition" "worker" {
   cpu                        = "256"
   memory                     = "512"
   execution_role_arn         = aws_iam_role.ecs_execution.arn
+  task_role_arn              = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([
     {
@@ -79,6 +83,8 @@ resource "aws_ecs_task_definition" "worker" {
       environment = [
         { name = "DATABASE_URL", value = "postgresql+asyncpg://docubank:${var.db_password}@${aws_db_instance.docubank.address}:5432/docubank" },
         { name = "OPENAI_API_KEY", value = var.openai_api_key },
+         { name = "S3_BUCKET", value = aws_s3_bucket.uploads.bucket },      
+        { name = "INGEST_QUEUE_URL", value = aws_sqs_queue.ingest.url },   
       ]
       logConfiguration = {
         logDriver = "awslogs"

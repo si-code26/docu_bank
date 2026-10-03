@@ -15,10 +15,16 @@ def _cache_key(prefix:str, *parts:str)->str:
     return f"{prefix}:{digest}"
 
 async def get_cached(prefix:str,*parts:str)->dict|None:
-    key=_cache_key(prefix,*parts)
-    raw=await _redis.get(key)
-    return json.loads(raw) if raw else None
+    try:
+        key=_cache_key(prefix,*parts)
+        raw=await _redis.get(key)
+        return json.loads(raw) if raw else None
+    except Exception:
+        return None
 
 async def set_cached(prefix:str,*parts:str,value:dict)->None:
-    key=_cache_key(prefix,*parts)
-    await _redis.set(key,json.dumps(value), ex=TTL_SECONDS)
+    try:
+        key=_cache_key(prefix,*parts)
+        await _redis.set(key,json.dumps(value), ex=TTL_SECONDS)
+    except Exception:
+        pass

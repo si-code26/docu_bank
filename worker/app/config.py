@@ -9,6 +9,6 @@ class Settings(BaseSettings):
     s3_bucket: str="docubank-uploads"
     embed_model:str= "text-embedding-3-small"
     sqs_endpoint:str | None = None
-    ingest_queue_url:str = "http://localhost:4566/000000000000/docubank-ingest"
+    ingest_queue_url:str
 
 settings=Settings()
