@@ -13,11 +13,11 @@ app = FastAPI(title="DocuBank API")
 app.include_router(upload_router)
 app.include_router(ask_router)
 
-@app.on_event("startup")
-async def create_tables() -> None:
-    async with engine.begin() as conn:
-        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))  # ← ADD THIS LINE
-        await conn.run_sync(Base.metadata.create_all)
+# @app.on_event("startup")
+# async def create_tables() -> None:
+#     async with engine.begin() as conn:
+#         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))  # ← ADD THIS LINE
+#         await conn.run_sync(Base.metadata.create_all)
 
 @app.get("/db_check")
 async def db_check(db: AsyncSession=Depends(get_db)) -> dict:
