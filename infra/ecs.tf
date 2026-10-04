@@ -50,9 +50,12 @@ resource "aws_ecs_task_definition" "api" {
       portMappings = [{ containerPort = 8000, protocol = "tcp" }]
       environment = [
         { name = "DATABASE_URL", value = "postgresql+asyncpg://docubank:${var.db_password}@${aws_db_instance.docubank.address}:5432/docubank" },
-        { name = "OPENAI_API_KEY", value = var.openai_api_key },
+        # { name = "OPENAI_API_KEY", value = var.openai_api_key },
         { name = "S3_BUCKET", value = aws_s3_bucket.uploads.bucket },
         { name = "INGEST_QUEUE_URL", value = aws_sqs_queue.ingest.url },
+      ]
+      secrets = [                                                   
+        { name = "OPENAI_API_KEY", valueFrom = data.aws_secretsmanager_secret.openai_key.arn }
       ]
       logConfiguration = {
         logDriver = "awslogs"
@@ -82,9 +85,12 @@ resource "aws_ecs_task_definition" "worker" {
       essential = true
       environment = [
         { name = "DATABASE_URL", value = "postgresql+asyncpg://docubank:${var.db_password}@${aws_db_instance.docubank.address}:5432/docubank" },
-        { name = "OPENAI_API_KEY", value = var.openai_api_key },
+        # { name = "OPENAI_API_KEY", value = var.openai_api_key },
          { name = "S3_BUCKET", value = aws_s3_bucket.uploads.bucket },      
         { name = "INGEST_QUEUE_URL", value = aws_sqs_queue.ingest.url },   
+      ]
+      secrets = [                                                    # ← ADD this whole block
+        { name = "OPENAI_API_KEY", valueFrom = data.aws_secretsmanager_secret.openai_key.arn }
       ]
       logConfiguration = {
         logDriver = "awslogs"
