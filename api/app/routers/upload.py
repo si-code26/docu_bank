@@ -1,9 +1,10 @@
 import re
 
 import pymupdf
-from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import get_current_user
 from app.chunking import chunk_text
 from app.db import get_db
 from app.embeddings import embed_texts
@@ -17,7 +18,7 @@ YEAR_RE=re.compile(r"(20\d{2})")
 @router.post("/upload", response_model=UploadResponse)
 async def upload(
     file: UploadFile,
-    user_id: str=Form(...),
+    user_id: str=Depends(get_current_user),#str=Form(...),
     db: AsyncSession=Depends(get_db)
 ) -> UploadResponse:
     if not file.filename or not file.filename.lower().endswith(".pdf"):
@@ -68,6 +69,6 @@ async def upload(
         document_id=doc.id,
         filename=file.filename,
         year=year,
-        chunk_count=0
+        chunk_count=chunk_count
     )
     

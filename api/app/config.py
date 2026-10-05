@@ -12,5 +12,8 @@ class Settings(BaseSettings):
     redis_url: str="redis://localhost:6379/0"
     sqs_endpoint:str|None=None
     ingest_queue_url:str
+    aws_region:str="us-east-1"
+    cognito_user_pool_id:str="us-east-1_Q9piP8XUp"
+    cognito_client_id:str="3pp56kb338fcvol3b0gmg6hqa0"
 
 settings=Settings()

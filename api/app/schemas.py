@@ -15,7 +15,7 @@ class UploadResponse(BaseModel):
 class AskRequest(BaseModel):
     question: str=Field(min_length=3, max_length=1000)
     year: int | None = None
-    user_id: str = Field(min_length=1, max_length=64)
+    # user_id: str = Field(min_length=1, max_length=64)
 
 class SourceChunk(BaseModel):
     page: int

@@ -3,6 +3,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
+from app.auth import get_current_user
 from app.config import settings
 from app.db import get_db
 from app.embeddings import _client
@@ -27,9 +28,13 @@ async def _latest_year(
     return result.scalar() or 2026
 
 @router.post("/ask/stream")
-async def ask_stream(req: AskRequest, db: AsyncSession=Depends(get_db)):
-    year=req.year or await _latest_year(db,req.user_id)
-    hits=await hybrid_retrieve(db, req.question, req.user_id, year)
+async def ask_stream(
+        req: AskRequest, 
+        user_id:str=Depends(get_current_user),
+        db: AsyncSession=Depends(get_db)
+    ):
+    year=req.year or await _latest_year(db,user_id)
+    hits=await hybrid_retrieve(db, req.question, user_id, year)
     context="\n---\n".join(f"[page {c.page}] {c.text}" for c,_ in hits) or "no results"
 
     async def event_generator():
@@ -52,18 +57,19 @@ async def ask_stream(req: AskRequest, db: AsyncSession=Depends(get_db)):
 @router.post("/ask", response_model=AskResponse)
 async def ask(
     req: AskRequest,
+    user_id:str=Depends(get_current_user),
     db: AsyncSession=Depends(get_db)
 ) -> AskResponse:
-    if not await check_rate_limit(req.user_id):
+    if not await check_rate_limit(user_id):
         raise HTTPException(status_code=429,detail="rate limit exceeded, try again shortly")
 
     year=req.year
     if year is None:
         result=await db.execute(
             select(func.max(Chunk.year))
-            .where(Chunk.user_id==req.user_id)
+            .where(Chunk.user_id==user_id)
         )
-        year=result=result.scalar()
+        year=result.scalar()
         if year is None:
             raise HTTPException(
                 status_code=404,
@@ -72,7 +78,7 @@ async def ask(
     hits=await retrieve_chunks(
         db,
         req.question,
-        req.user_id,
+        user_id,
         year
     )
     if not hits:

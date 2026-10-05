@@ -4,8 +4,7 @@ from fastapi import Depends, FastAPI
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import engine, get_db
-from app.models import Base
+from app.db import get_db
 from app.routers.ask import router as ask_router
 from app.routers.upload import router as upload_router
 
