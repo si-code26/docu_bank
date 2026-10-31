@@ -53,9 +53,12 @@ resource "aws_ecs_task_definition" "api" {
         # { name = "OPENAI_API_KEY", value = var.openai_api_key },
         { name = "S3_BUCKET", value = aws_s3_bucket.uploads.bucket },
         { name = "INGEST_QUEUE_URL", value = aws_sqs_queue.ingest.url },
+        { name = "LANGFUSE_HOST", value = "https://cloud.langfuse.com" }
       ]
       secrets = [                                                   
-        { name = "OPENAI_API_KEY", valueFrom = data.aws_secretsmanager_secret.openai_key.arn }
+        { name = "OPENAI_API_KEY", valueFrom = data.aws_secretsmanager_secret.openai_key.arn },
+        { name = "LANGFUSE_PUBLIC_KEY", valueFrom = data.aws_secretsmanager_secret.langfuse_public_key.arn },
+        { name = "LANGFUSE_SECRET_KEY", valueFrom = data.aws_secretsmanager_secret.langfuse_secret_key.arn }
       ]
       logConfiguration = {
         logDriver = "awslogs"

@@ -8,6 +8,9 @@ from app.db import get_db
 from app.routers.ask import router as ask_router
 from app.routers.upload import router as upload_router
 
+from dotenv import load_dotenv
+load_dotenv()
+
 app = FastAPI(title="DocuBank API")
 app.include_router(upload_router)
 app.include_router(ask_router)

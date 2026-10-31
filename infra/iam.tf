@@ -38,7 +38,11 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
     Statement = [{
       Effect   = "Allow"
       Action   = ["secretsmanager:GetSecretValue"]
-      Resource = data.aws_secretsmanager_secret.openai_key.arn
+      Resource = [
+        data.aws_secretsmanager_secret.openai_key.arn,
+        data.aws_secretsmanager_secret.langfuse_public_key.arn,
+        data.aws_secretsmanager_secret.langfuse_secret_key.arn
+      ]
     }]
   })
 }
