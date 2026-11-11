@@ -1,10 +1,9 @@
 import time
 
 import pybreaker
-from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
-
 from langfuse.openai import AsyncOpenAI
 from openai import APIStatusError
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from app.cache import get_cached, set_cached
 from app.config import settings
