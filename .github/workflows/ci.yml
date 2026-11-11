@@ -11,11 +11,32 @@ jobs:
     defaults:
       run:
         working-directory: api
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: docubank
+          POSTGRES_PASSWORD: docubank
+          POSTGRES_DB: docubank
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U docubank"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql+asyncpg://docubank:docubank@localhost:5432/docubank
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      INGEST_QUEUE_URL: unused-in-ci
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - run: uv sync
       - run: uv run ruff check .
+      - run: uv run python scripts/seed_eval_data.py
+        env:
+          PYTHONPATH: .
       - run: uv run pytest
 
   worker:
