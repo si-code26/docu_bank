@@ -13,9 +13,6 @@ from app.auth import get_current_user
 from app.db import engine
 from app.main import app
 
-from app.auth import get_current_user
-from app.main import app
-
 
 CASES = [
     {
